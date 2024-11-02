@@ -11,37 +11,43 @@ use App\Jobs\ProcessRabbitMQMessage;
 
 class RabbitMQJob extends BaseJob
 {
-  public function fire()
-  {
-    $message = $this->getRawBody();  
-    $json = json_decode($message, true);
+    public function fire()
+    {
+        $message = $this->getRawBody();  
+        $json = json_decode($message, true);
+        $fileHelper = new FileHelper();
 
-    $fileHelper = new FileHelper();
-    $file = $fileHelper->validateBase64($json['file']);
+        $existing = File::where('unique_id', $json['unique_id'])->first();
+        if ($existing) {
+            $fileHelper->deleteFile($existing['file_path']);
+            $existing->delete();
+        }
 
-    $filePath = $file->store('uploads', 'public');
-    $fileName = $file->hashName();
-    $originalFileName = $file->getClientOriginalName();
-    $fileSize = $file->getSize();
-    $fileType = $file->getClientOriginalExtension();
+        $file = $fileHelper->validateBase64($json['file']);
 
-    $uploadFile = new File();
-    $uploadFile->file_path = $filePath;
-    $uploadFile->file_name = $fileName;
-    $uploadFile->origin_file_name = $originalFileName;
-    $uploadFile->file_size = $fileSize;
-    $uploadFile->file_type = 1;
-    $uploadFile->note = $json['note'];
-    $uploadFile->upload_type = $json['upload_type'];
-    $uploadFile->reference_id = $json['reference_id'];
-    $uploadFile->unique_id = $json['unique_id'];
-    $uploadFile->save();
+        $filePath = $file->store('uploads', 'public');
+        $fileName = $file->hashName();
+        $originalFileName = $file->getClientOriginalName();
+        $fileSize = $file->getSize();
+        $fileType = $file->getClientOriginalExtension();
 
-    $this->delete();
-  }
+        $uploadFile = new File();
+        $uploadFile->file_path = $filePath;
+        $uploadFile->file_name = $fileName;
+        $uploadFile->origin_file_name = $originalFileName;
+        $uploadFile->file_size = $fileSize;
+        $uploadFile->file_type = 1;
+        $uploadFile->note = $json['note'];
+        $uploadFile->upload_type = $json['upload_type'];
+        $uploadFile->reference_id = $json['reference_id'];
+        $uploadFile->unique_id = $json['unique_id'];
+        $uploadFile->save();
 
-  public function getName()
-  {
-    return '';
-  }
+        $this->delete();
+    }
+
+    public function getName()
+    {
+        return '';
+    }
 }
