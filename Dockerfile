@@ -21,5 +21,7 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 
 RUN composer install
 
+RUN chown -R www-data:www-data /var/www
+
 EXPOSE 9000
 CMD ["php-fpm"]
